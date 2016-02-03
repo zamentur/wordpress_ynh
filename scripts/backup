@@ -1,26 +1,25 @@
 #!/bin/bash
+APP=${!#}
 
 # The parameter $1 is the backup directory location dedicated to the app
 backup_dir=$1
 
-# The parameter $2 is theid of the app instance
-app=$2
 
-domain=$(sudo yunohost app setting $app domain)
-path=$(sudo yunohost app setting $app path)
-admin_wordpress=$(sudo yunohost app setting $app admin)
-language=$(sudo yunohost app setting $app language)
-is_public=$(sudo yunohost app setting $app is_public)
+domain=$(sudo yunohost app setting $APP domain)
+path=$(sudo yunohost app setting $APP path)
+admin_wordpress=$(sudo yunohost app setting $APP admin)
+language=$(sudo yunohost app setting $APP language)
+is_public=$(sudo yunohost app setting $APP is_public)
 
 # Copy the app files
-final_path=/var/www/$app
+final_path=/var/www/$APP
 sudo mkdir -p ${backup_dir}/var/www
-sudo cp -a $final_path "${backup_dir}/var/www/$app"
+sudo cp -a $final_path "${backup_dir}/var/www/$APP"
 
 # Copy the conf files
 sudo mkdir -p "${backup_dir}/conf"
-sudo cp -a /etc/nginx/conf.d/$domain.d/$app.conf "${backup_dir}/conf/nginx.conf"
+sudo cp -a /etc/nginx/conf.d/$domain.d/$APP.conf "${backup_dir}/conf/nginx.conf"
 
 # Backup db
 root_pwd=$(sudo cat /etc/yunohost/mysql)
-sudo su -c "mysqldump -u root -p$root_pwd --no-create-db $app > ${backup_dir}/db.sql"
+sudo su -c "mysqldump -u root -p$root_pwd --no-create-db $APP > ${backup_dir}/db.sql"

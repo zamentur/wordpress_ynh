@@ -1,23 +1,23 @@
 #!/bin/bash
-
+APP=${!#}
 # Retrieve arguments
-domain=$(sudo yunohost app setting wordpress domain)
-path=$(sudo yunohost app setting wordpress path)
-admin_wordpress=$(sudo yunohost app setting wordpress admin)
-language=$(sudo yunohost app setting wordpress language)
-is_public=$(sudo yunohost app setting wordpress is_public)
+domain=$(sudo yunohost app setting $APP domain)
+path=$(sudo yunohost app setting $APP path)
+admin_wordpress=$(sudo yunohost app setting $APP admin)
+language=$(sudo yunohost app setting $APP language)
+is_public=$(sudo yunohost app setting $APP is_public)
 
 root_pwd=$(sudo cat /etc/yunohost/mysql)
 
-final_path=/var/www/wordpress
+final_path=/var/www/$APP
 
-db_name=wordpress
+db_name=$APP
 
 if [[ "$admin_wordpress" = "" ]];
 then
-    mysql -u root -p$root_pwd $db_name -e "select MAX(user_login) from wp_users where user_status=0 INTO OUTFILE '/tmp/wordpressuser';"
-    admin_wordpress=$(cat /tmp/wordpressuser)
-    sudo rm -f /tmp/wordpressuser
+    mysql -u root -p$root_pwd $db_name -e "select MAX(user_login) from wp_users where user_status=0 INTO OUTFILE '/tmp/$APPuser';"
+    admin_wordpress=$(cat /tmp/$APPuser)
+    sudo rm -f /tmp/$APPuser
 fi
 
 if [[ "$language" = "" ]];
@@ -27,15 +27,15 @@ fi
 
 if [[ "$is_public" = "" ]];
 then
-    mysql -u root -p$root_pwd $db_name -e "select option_value from wp_options WHERE option_name='active_plugins' INTO OUTFILE '/tmp/wordpressispublic';"
-    grep -q http-authentication /tmp/wordpressispublic
+    mysql -u root -p$root_pwd $db_name -e "select option_value from wp_options WHERE option_name='active_plugins' INTO OUTFILE '/tmp/$APPispublic';"
+    grep -q http-authentication /tmp/$APPispublic
     if [[ $? -eq 0 ]];
     then
         is_public=Yes
     else
         is_public=No
     fi
-    sudo rm -f /tmp/wordpressispublic
+    sudo rm -f /tmp/$APPispublic
 fi
 
 # Check if admin is not null
@@ -51,16 +51,16 @@ sed -i "s@ALIASTOCHANGE@$final_path/@g" ../conf/nginx.conf*
 
 if [ $is_public = "Yes" ];
 then
-    sudo cp ../conf/nginx.conf-public /etc/nginx/conf.d/$domain.d/wordpress.conf
+    sudo cp ../conf/nginx.conf-public /etc/nginx/conf.d/$domain.d/$APP.conf
     grep -q "define('FORCE_SSL_ADMIN', true);" $final_path/wp-config.php
     if [[ ! $? -eq 0 ]];
     then
         echo "define('FORCE_SSL_ADMIN', true);" | sudo tee -a $final_path/wp-config.php
-    else 
+    else
         sudo sed -i "s@//define('FORCE_SSL_ADMIN@define('FORCE_SSL_ADMIN@g" $final_path/wp-config.php
     fi
 else
-    sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/wordpress.conf
+    sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$APP.conf
 fi
 
 # Reload Nginx
